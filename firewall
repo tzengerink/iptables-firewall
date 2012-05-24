@@ -22,7 +22,7 @@ if [ ! -f $WL ]; then
 	exit 0
 fi
 if [ ! -f $BL ]; then
-	echo "Unable to load whitelist file ($WL)... Exiting"
+	echo "Unable to load blacklist file ($BL)... Exiting"
 	exit 0
 fi
 source $CNF
