@@ -13,22 +13,38 @@ CNF="$DIR/firewall.conf"
 WL="$DIR/firewall.whitelist"
 BL="$DIR/firewall.blacklist"
 
+## -- FLUSH --------------------------------------------------------------------
+
+flush_firewall(){
+	$IPT -F
+	$IPT -X
+}
+
 ## -- START --------------------------------------------------------------------
 
 start_firewall(){
 	echo -e "Starting firewall..."
-}
 
-## -- STOP ---------------------------------------------------------------------
-
-stop_firewall(){
-	echo -e "Stopping firewall..."
+	# Creating neccesary chains
+	$IPT -N TCP
+	$IPT -N UDP
+	$IPT -P FORWARD DROP
+	$IPT -P OUTPUT ACCEPT
+	#$IPT -P INTPUT DROP
 }
 
 ## -- STATUS -------------------------------------------------------------------
 
 status_firewall(){
-	echo -e "Firewall Status"
+	echo -e "Firewall Status:"
+}
+
+## -- STOP ---------------------------------------------------------------------
+
+stop_firewall(){
+	$IPT -P INPUT ACCEPT
+	$IPT -P FORWARD ACCEPT
+	$IPT -P OUTPUT ACCEPT
 }
 
 ## -- EXECUTE ------------------------------------------------------------------
@@ -40,21 +56,22 @@ fi
 source $CNF
 
 case "$1" in
-	start)
-		start_firewall
+	flush)
+		flush_firewall
 		;;
-	stop)
-		stop_firewall
+	start|restart)
+		flush_firewall
+		start_firewall
 		;;
 	status)
 		status_firewall
 		;;
-	restart)
+	stop)
+		flush_firewall
 		stop_firewall
-		start_firewall
 		;;
 	*)
-		echo -e "Usage: $0 [start|stop|status|restart]"
+		echo -e "Usage: $0 [flush|restart|start|status|stop]"
 		exit 1
 esac
 
