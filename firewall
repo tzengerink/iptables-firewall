@@ -10,6 +10,8 @@ set -e
 DIR="$(cd "$(dirname $0)" && pwd)"
 IPT="$(which iptables)"
 CNF="$DIR/firewall.conf"
+WL="$DIR/firewall.whitelist"
+BL="$DIR/firewall.blacklist"
 
 ## -- START --------------------------------------------------------------------
 
