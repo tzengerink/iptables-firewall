@@ -4,4 +4,9 @@
 # Lisenced under MIT Lisence
 # Visit: https://raw.github.com/Mytho/iptables-firewall/master/license.txt
 
-
+# Multicast addresses
+224.0.0.0/4
+220.0.0.0/5
+0.0.0.0/8
+239.255.255.0/24
+255.255.255.255

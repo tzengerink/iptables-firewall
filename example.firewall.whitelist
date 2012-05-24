@@ -4,4 +4,4 @@
 # Lisenced under MIT Lisence
 # Visit: https://raw.github.com/Mytho/iptables-firewall/master/license.txt
 
-
+192.168.1.0/24
