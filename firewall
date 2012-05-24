@@ -15,25 +15,34 @@ BL="$DIR/firewall.blacklist"
 
 ## -- FLUSH --------------------------------------------------------------------
 
-flush_firewall(){
+flush_firewall()
+{
 	$IPT -F
 	$IPT -X
 }
 
 ## -- START --------------------------------------------------------------------
 
-start_firewall(){
-	# Creating necessary chains
+start_firewall()
+{
+	$IPT -N LOGDROP
 	$IPT -N TCP
 	$IPT -N UDP
 	$IPT -P FORWARD DROP
 	$IPT -P OUTPUT ACCEPT
 	#$IPT -P INTPUT DROP
+	
+	## -- LOGDROP -- ##
+
+	$IPT -A LOGDROP -m limit --limit 5/m --limit-burst 10 -j LOG
+	$IPT -A LOGDROP -j DROP
+
+	## -- INPUT -- ##
 
 	# Initial setup
 	$IPT -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
 	$IPT -A INPUT -i lo -j ACCEPT
-	$IPT -A INPUT -m conntrack --ctstate INVALID -j DROP
+	$IPT -A INPUT -m conntrack --ctstate INVALID -j LOGDROP
 	$IPT -A INPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW -j ACCEPT
 
 	# Send new TCP / UDP connections through their own chain
@@ -41,36 +50,66 @@ start_firewall(){
 	$IPT -A INPUT -p udp -m conntrack --ctstate NEW -j UDP
 
 	# Reject different protocols with sending a nice message
-	$IPT -A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
-	$IPT -A INPUT -p tcp -j REJECT --reject-with tcp-rst
+	$IPT -A INPUT -p tcp -m recent --set --name TCP-SCAN -j REJECT --reject-with tcp-rst
+	$IPT -A INPUT -p udp -m recent --set --name UDP-SCAN -j REJECT --reject-with icmp-port-unreachable
 	$IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
 
-	# Block all TCP/UDP traffic for blacklisted sources 
+	## -- TCP -- ##
+
+	# Trick SYN scans
+	$IPT -I TCP -p tcp -m recent --update --seconds 60 --name TCP-SCAN -j REJECT --reject-with tcp-rst
+
+	# Log and drop all traffic from blacklisted sources 
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
-		$IPT -A TCP -p tcp -s $SRC -j DROP
-		$IPT -A UDP -p udp -s $SRC -j DROP
+		$IPT -A TCP -p tcp -s $SRC -j LOGDROP
 	done
 
-	# Aceept all TCP/UDP traffic for whitelisted sources 
+	# Accept all traffic from whitelisted sources 
 	for $SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_TCP; do
 			$IPT -A TCP -p tcp -s $SRC --dport $PORT -j ACCEPT
 		done
+	done
+
+	# Accept all traffic on open ports
+	for PORT in $OPEN_TCP; do
+		$IPT -A TCP -p tcp --dport $PORT -j ACCEPT
+	done
+
+	## -- UDP -- ##
+
+	# Trick UDP scans
+	$IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-SCAN -j --reject-with port-unreach
+
+	# Log and drop all traffic from blacklisted sources 
+	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
+		$IPT -A UDP -p udp -s $SRC -j lOGDROP
+	done
+
+	# Accept all traffic from whitelisted sources 
+	for $SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_UDP; do
 			$IPT -A UDP -p udp -s $SRC --dport $PORT -j ACCEPT
 		done
+	done
+
+	# Accept all traffic on open ports
+	for PORT in $OPEN_UDP; do
+		$IPT -A UDP -p udp --dport $PORT -j ACCEPT
 	done
 }
 
 ## -- STATUS -------------------------------------------------------------------
 
-status_firewall(){
+status_firewall()
+{
 	$IPT -vnL
 }
 
 ## -- STOP ---------------------------------------------------------------------
 
-stop_firewall(){
+stop_firewall()
+{
 	$IPT -P INPUT ACCEPT
 	$IPT -P FORWARD ACCEPT
 	$IPT -P OUTPUT ACCEPT
