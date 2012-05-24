@@ -7,20 +7,9 @@
 # Visit: https://raw.github.com/Mytho/iptables-firewall/master/license.txt
 
 set -e
-DIR="$( cd "$( dirname $0 )" && pwd )"
-
-# Shortcut to executables
-IPT=$( which iptables )
-if [ ! -x $IPT ]; then
-	echo "Unable to execute iptables ... Exiting"
-	exit 0
-fi
-
-# Load configuration file
+DIR="$(cd "$(dirname $0)" && pwd)"
+IPT="$(which iptables)"
 CNF="$DIR/firewall.conf"
-if [ -f $CNF ]; then
-	source $CNF
-fi
 
 ## -- START --------------------------------------------------------------------
 
@@ -41,6 +30,12 @@ status_firewall(){
 }
 
 ## -- EXECUTE ------------------------------------------------------------------
+
+if [ ! -f $CNF ]; then
+	echo "Unable to load configuration file ($CNF)... Exiting"
+	exit 0
+fi
+source $CNF
 
 case "$1" in
 	start)
