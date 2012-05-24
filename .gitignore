@@ -1,2 +1,3 @@
-firefall.whitelist
-firefall.blacklist
+firewall.whitelist
+firewall.blacklist
+firewall.conf
