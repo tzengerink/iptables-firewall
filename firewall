@@ -51,10 +51,28 @@ start_firewall()
 	$IPT -A LOGDROP -m limit --limit 5/m --limit-burst 10 -j LOG
 	$IPT -A LOGDROP -j DROP
 
-	## -- TCP -- ##
+	## -- INPUT -- ##
+
+	# Initial setup
+	$IPT -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	$IPT -A INPUT -i lo -j ACCEPT
+	$IPT -A INPUT -m conntrack --ctstate INVALID -j LOGDROP
+	$IPT -A INPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW -j ACCEPT
+
+	# Send new TCP / UDP connections through their own chain
+	$IPT -A INPUT -p tcp --syn -m conntrack --ctstate NEW -j TCP
+	$IPT -A INPUT -p udp -m conntrack --ctstate NEW -j UDP
+
+	# Reject different protocols with sending a nice message
+	$IPT -A INPUT -p tcp -m recent --set --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
+	$IPT -A INPUT -p udp -m recent --set --name UDP-PORTSCAN -j REJECT --reject-with icmp-port-unreachable
+	$IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
 
 	# Trick portscanners
 	$IPT -I TCP -p tcp -m recent --update --seconds 60 --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
+	$IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-PORTSCAN -j REJECT --reject-with port-unreach
+
+	## -- TCP -- ##
 
 	# Log and drop all traffic from blacklisted sources 
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
@@ -75,9 +93,6 @@ start_firewall()
 
 	## -- UDP -- ##
 
-	# Trick portscanners
-	$IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-PORTSCAN -j REJECT --reject-with port-unreach
-
 	# Log and drop all traffic from blacklisted sources 
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
 		$IPT -A UDP -p udp -s $SRC -j LOGDROP
@@ -94,23 +109,6 @@ start_firewall()
 	for PORT in $OPEN_UDP; do
 		$IPT -A UDP -p udp --dport $PORT -j ACCEPT
 	done
-
-	## -- INPUT -- ##
-
-	# Initial setup
-	$IPT -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-	$IPT -A INPUT -i lo -j ACCEPT
-	$IPT -A INPUT -m conntrack --ctstate INVALID -j LOGDROP
-	$IPT -A INPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW -j ACCEPT
-
-	# Send new TCP / UDP connections through their own chain
-	$IPT -A INPUT -p tcp --syn -m conntrack --ctstate NEW -j TCP
-	$IPT -A INPUT -p udp -m conntrack --ctstate NEW -j UDP
-
-	# Reject different protocols with sending a nice message
-	$IPT -A INPUT -p tcp -m recent --set --name TCP-PORTSCAN -j REJECT --reject-with tcp-rst
-	$IPT -A INPUT -p udp -m recent --set --name UDP-PORTSCAN -j REJECT --reject-with icmp-port-unreachable
-	$IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
 }
 
 ## -- STATUS -------------------------------------------------------------------
@@ -132,9 +130,6 @@ stop_firewall()
 ## -- EXECUTE ------------------------------------------------------------------
 
 case "$1" in
-	flush)
-		flush_firewall
-		;;
 	start|restart)
 		flush_firewall
 		start_firewall
@@ -147,7 +142,7 @@ case "$1" in
 		stop_firewall
 		;;
 	*)
-		echo -e "Usage: $0 [flush|restart|start|status|stop]"
+		echo -e "Usage: $0 [restart|start|status|stop]"
 		exit 1
 esac
 
