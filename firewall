@@ -13,6 +13,20 @@ CNF="$DIR/firewall.conf"
 WL="$DIR/firewall.whitelist"
 BL="$DIR/firewall.blacklist"
 
+if [ ! -f $CNF ]; then
+	echo "Unable to load configuration file ($CNF)... Exiting"
+	exit 0
+fi
+if [ ! -f $WL ]; then
+	echo "Unable to load whitelist file ($WL)... Exiting"
+	exit 0
+fi
+if [ ! -f $BL ]; then
+	echo "Unable to load whitelist file ($WL)... Exiting"
+	exit 0
+fi
+source $CNF
+
 ## -- FLUSH --------------------------------------------------------------------
 
 flush_firewall()
@@ -79,7 +93,7 @@ start_firewall()
 	## -- UDP -- ##
 
 	# Trick UDP scans
-	$IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-SCAN -j --reject-with port-unreach
+	$IPT -I UDP -p udp -m recent --update --seconds 60 --name UDP-SCAN -j --reject-with port-unreachable
 
 	# Log and drop all traffic from blacklisted sources 
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
@@ -116,12 +130,6 @@ stop_firewall()
 }
 
 ## -- EXECUTE ------------------------------------------------------------------
-
-if [ ! -f $CNF ]; then
-	echo "Unable to load configuration file ($CNF)... Exiting"
-	exit 0
-fi
-source $CNF
 
 case "$1" in
 	flush)
