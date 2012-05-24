@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# Firewall using iptables
+#
+# Copyright (c) T. Zengerink
+# Lisenced under MIT Lisence
+# Visit: https://raw.github.com/Mytho/iptables-firewall/master/license.txt
+
+set -e
+DIR="$( cd "$( dirname $0 )" && pwd )"
+
+# Shortcut to executables
+IPT=$( which iptables )
+if [ ! -x $IPT ]; then
+	echo "Unable to execute iptables ... Exiting"
+	exit 0
+fi
+
+# Load configuration file
+CNF="$DIR/firewall.conf"
+if [ -f $CNF ]; then
+	source $CNF
+fi
+
+## -- START --------------------------------------------------------------------
+
+start_firewall(){
+	echo -e "Starting firewall..."
+}
+
+## -- STOP ---------------------------------------------------------------------
+
+stop_firewall(){
+	echo -e "Stopping firewall..."
+}
+
+## -- STATUS -------------------------------------------------------------------
+
+status_firewall(){
+	echo -e "Firewall Status"
+}
+
+## -- EXECUTE ------------------------------------------------------------------
+
+case "$1" in
+	start)
+		start_firewall
+		;;
+	stop)
+		stop_firewall
+		;;
+	status)
+		status_firewall
+		;;
+	restart)
+		stop_firewall
+		start_firewall
+		;;
+	*)
+		echo -e "Usage: $0 [start|stop|status|restart]"
+		exit 1
+esac
+
+exit 0
