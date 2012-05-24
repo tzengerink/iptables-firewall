@@ -23,20 +23,49 @@ flush_firewall(){
 ## -- START --------------------------------------------------------------------
 
 start_firewall(){
-	echo -e "Starting firewall..."
-
-	# Creating neccesary chains
+	# Creating necessary chains
 	$IPT -N TCP
 	$IPT -N UDP
 	$IPT -P FORWARD DROP
 	$IPT -P OUTPUT ACCEPT
 	#$IPT -P INTPUT DROP
+
+	# Initial setup
+	$IPT -A INPUT -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+	$IPT -A INPUT -i lo -j ACCEPT
+	$IPT -A INPUT -m conntrack --ctstate INVALID -j DROP
+	$IPT -A INPUT -p icmp --icmp-type 8 -m conntrack --ctstate NEW -j ACCEPT
+
+	# Send new TCP / UDP connections through their own chain
+	$IPT -A INPUT -p tcp --syn -m conntrack --ctstate NEW -j TCP
+	$IPT -A INPUT -p udp -m conntrack --ctstate NEW -j UDP
+
+	# Reject different protocols with sending a nice message
+	$IPT -A INPUT -p udp -j REJECT --reject-with icmp-port-unreachable
+	$IPT -A INPUT -p tcp -j REJECT --reject-with tcp-rst
+	$IPT -A INPUT -j REJECT --reject-with icmp-proto-unreachable
+
+	# Block all TCP/UDP traffic for blacklisted sources 
+	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
+		$IPT -A TCP -p tcp -s $SRC -j DROP
+		$IPT -A UDP -p udp -s $SRC -j DROP
+	done
+
+	# Aceept all TCP/UDP traffic for whitelisted sources 
+	for $SRC in `grep -v ^# $WL | awk '{print $1}'`; do
+		for PORT in $WHITELIST_OPEN_TCP; do
+			$IPT -A TCP -p tcp -s $SRC --dport $PORT -j ACCEPT
+		done
+		for PORT in $WHITELIST_OPEN_UDP; do
+			$IPT -A UDP -p udp -s $SRC --dport $PORT -j ACCEPT
+		done
+	done
 }
 
 ## -- STATUS -------------------------------------------------------------------
 
 status_firewall(){
-	echo -e "Firewall Status:"
+	$IPT -vnL
 }
 
 ## -- STOP ---------------------------------------------------------------------
