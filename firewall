@@ -35,6 +35,13 @@ flush_firewall()
 	$IPT -X
 }
 
+## -- SAVE ---------------------------------------------------------------------
+
+save_firewall()
+{
+	rc.d save iptables
+}
+
 ## -- START --------------------------------------------------------------------
 
 start_firewall()
@@ -45,7 +52,7 @@ start_firewall()
 	$IPT -P FORWARD DROP
 	$IPT -P OUTPUT ACCEPT
 	$IPT -P INPUT DROP
-	
+
 	## -- LOGDROP -- ##
 
 	$IPT -A LOGDROP -m limit --limit 5/m --limit-burst 10 -j LOG
@@ -74,12 +81,12 @@ start_firewall()
 
 	## -- TCP -- ##
 
-	# Log and drop all traffic from blacklisted sources 
+	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
 		$IPT -A TCP -p tcp -s $SRC -j LOGDROP
 	done
 
-	# Accept all traffic from whitelisted sources 
+	# Accept all traffic from whitelisted sources
 	for SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_TCP; do
 			$IPT -A TCP -p tcp -s $SRC --dport $PORT -j ACCEPT
@@ -93,12 +100,12 @@ start_firewall()
 
 	## -- UDP -- ##
 
-	# Log and drop all traffic from blacklisted sources 
+	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
 		$IPT -A UDP -p udp -s $SRC -j LOGDROP
 	done
 
-	# Accept all traffic from whitelisted sources 
+	# Accept all traffic from whitelisted sources
 	for SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_UDP; do
 			$IPT -A UDP -p udp -s $SRC --dport $PORT -j ACCEPT
@@ -130,6 +137,9 @@ stop_firewall()
 ## -- EXECUTE ------------------------------------------------------------------
 
 case "$1" in
+	save)
+		save_firewall
+		;;
 	start|restart)
 		flush_firewall
 		start_firewall
@@ -142,7 +152,7 @@ case "$1" in
 		stop_firewall
 		;;
 	*)
-		echo -e "Usage: $0 [restart|start|status|stop]"
+		echo -e "Usage: $0 [restart|save|start|status|stop]"
 		exit 1
 esac
 
