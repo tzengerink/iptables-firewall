@@ -35,6 +35,13 @@ flush_firewall()
 	$IPT -X
 }
 
+## -- SAVE ---------------------------------------------------------------------
+
+save_firewall()
+{
+	rc.d save iptables
+}
+
 ## -- START --------------------------------------------------------------------
 
 start_firewall()
@@ -130,6 +137,9 @@ stop_firewall()
 ## -- EXECUTE ------------------------------------------------------------------
 
 case "$1" in
+	save)
+		save_firewall
+		;;
 	start|restart)
 		flush_firewall
 		start_firewall
@@ -142,7 +152,7 @@ case "$1" in
 		stop_firewall
 		;;
 	*)
-		echo -e "Usage: $0 [restart|start|status|stop]"
+		echo -e "Usage: $0 [restart|save|start|status|stop]"
 		exit 1
 esac
 
