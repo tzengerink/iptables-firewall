@@ -4,7 +4,7 @@
 #
 # Copyright (c) T. Zengerink
 # Lisenced under MIT Lisence
-# Visit: https://raw.github.com/Mytho/iptables-firewall/master/license.txt
+# Visit: https://raw.github.com/Mytho/iptables-firewall/master/LISENCE
 
 set -e
 DIR="$(cd "$(dirname $0)" && pwd)"
@@ -45,7 +45,7 @@ start_firewall()
 	$IPT -P FORWARD DROP
 	$IPT -P OUTPUT ACCEPT
 	$IPT -P INPUT DROP
-	
+
 	## -- LOGDROP -- ##
 
 	$IPT -A LOGDROP -m limit --limit 5/m --limit-burst 10 -j LOG
@@ -74,12 +74,12 @@ start_firewall()
 
 	## -- TCP -- ##
 
-	# Log and drop all traffic from blacklisted sources 
+	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
 		$IPT -A TCP -p tcp -s $SRC -j LOGDROP
 	done
 
-	# Accept all traffic from whitelisted sources 
+	# Accept all traffic from whitelisted sources
 	for SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_TCP; do
 			$IPT -A TCP -p tcp -s $SRC --dport $PORT -j ACCEPT
@@ -93,12 +93,12 @@ start_firewall()
 
 	## -- UDP -- ##
 
-	# Log and drop all traffic from blacklisted sources 
+	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
 		$IPT -A UDP -p udp -s $SRC -j LOGDROP
 	done
 
-	# Accept all traffic from whitelisted sources 
+	# Accept all traffic from whitelisted sources
 	for SRC in `grep -v ^# $WL | awk '{print $1}'`; do
 		for PORT in $WHITELIST_OPEN_UDP; do
 			$IPT -A UDP -p udp -s $SRC --dport $PORT -j ACCEPT
