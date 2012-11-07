@@ -83,7 +83,7 @@ start_firewall()
 
 	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
-		$IPT -A TCP -p tcp -s $SRC -j LOGDROP
+		$IPT -A TCP -p tcp -s $SRC -j DROP
 	done
 
 	# Accept all traffic from whitelisted sources
@@ -102,7 +102,7 @@ start_firewall()
 
 	# Log and drop all traffic from blacklisted sources
 	for SRC in `grep -v ^# $BL | awk '{print $1}'`; do
-		$IPT -A UDP -p udp -s $SRC -j LOGDROP
+		$IPT -A UDP -p udp -s $SRC -j DROP
 	done
 
 	# Accept all traffic from whitelisted sources
