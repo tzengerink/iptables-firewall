@@ -1,33 +1,38 @@
 #!/bin/bash
 #
-# Firewall using iptables
-#
+# FIREWALL USING IPTABLES
+# -----------------------
 # Copyright (c) T. Zengerink
 # Lisenced under MIT Lisence
 # Visit: https://raw.github.com/Mytho/iptables-firewall/master/LISENCE
-
 set -e
+
 DIR="$(cd "$(dirname $0)" && pwd)"
 IPT="$(which iptables)"
 CNF="$DIR/firewall.conf"
 WL="$DIR/firewall.whitelist"
 BL="$DIR/firewall.blacklist"
 
+## LOAD CONFIG FILES
+
 if [ ! -f $CNF ]; then
 	echo "Unable to load configuration file ($CNF)... Exiting"
 	exit 0
 fi
+
 if [ ! -f $WL ]; then
 	echo "Unable to load whitelist file ($WL)... Exiting"
 	exit 0
 fi
+
 if [ ! -f $BL ]; then
 	echo "Unable to load blacklist file ($BL)... Exiting"
 	exit 0
 fi
+
 source $CNF
 
-## -- FLUSH --------------------------------------------------------------------
+## DEFINE FUNCTIONS
 
 flush_firewall()
 {
@@ -35,14 +40,10 @@ flush_firewall()
 	$IPT -X
 }
 
-## -- SAVE ---------------------------------------------------------------------
-
 save_firewall()
 {
 	rc.d save iptables
 }
-
-## -- START --------------------------------------------------------------------
 
 start_firewall()
 {
@@ -118,14 +119,10 @@ start_firewall()
 	done
 }
 
-## -- STATUS -------------------------------------------------------------------
-
 status_firewall()
 {
 	$IPT -vnL
 }
-
-## -- STOP ---------------------------------------------------------------------
 
 stop_firewall()
 {
@@ -134,7 +131,7 @@ stop_firewall()
 	$IPT -P OUTPUT ACCEPT
 }
 
-## -- EXECUTE ------------------------------------------------------------------
+## EXECUTE
 
 case "$1" in
 	save)
