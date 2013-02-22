@@ -2,7 +2,7 @@
 #
 # FIREWALL USING IPTABLES
 # -----------------------
-# Copyright (c) T. Zengerink
+# Copyright (c) 2012-2013 T. Zengerink
 # Lisenced under MIT Lisence
 # Visit: https://raw.github.com/Mytho/iptables-firewall/master/LISENCE
 set -e
