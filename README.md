@@ -1,3 +1,8 @@
+
+
+_**An new/improved version of the firewall is available [here](https://gist.github.com/Mytho/5517072).**_
+
+
 Firewall configuration using iptables
 -------------------------------------
 
